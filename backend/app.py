@@ -1,9 +1,9 @@
 import os
 import uuid
-import base64
+import json
 import sqlite3
 from datetime import datetime
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, Response, stream_with_context
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -223,37 +223,40 @@ def chat():
     if rag_context:
         system_content += f"\n\n--- Relevant content from child's textbook ---\n{rag_context}\n--- End ---\nUse the above textbook content to guide your explanation when relevant."
 
-    # Check if first message (for title)
     existing = get_session_messages(session_id)
     title = message[:60] if not existing else None
-
-    # Save user message first
     save_message(session_id, "user", message, title)
 
-    # Call LLM with history
     history = build_history(session_id)
     messages_for_llm = [SystemMessage(content=system_content)] + history
 
-    try:
-        response = llm.invoke(messages_for_llm)
-        reply = response.content
-    except Exception as e:
-        return jsonify({"error": f"AI error: {str(e)}"}), 500
+    def generate():
+        full_reply = ""
+        try:
+            for chunk in llm.stream(messages_for_llm):
+                token = chunk.content
+                if token:
+                    full_reply += token
+                    yield f"data: {json.dumps({'token': token})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            return
 
-    save_message(session_id, "assistant", reply)
+        save_message(session_id, "assistant", full_reply)
 
-    # Extract practice problem only when explicitly marked as "Practice Time!"
-    practice_problem = None
-    if "🎯 Practice Time!" in reply:
-        parts = reply.split("🎯 Practice Time!", 1)
-        if len(parts) > 1 and parts[1].strip():
-            practice_problem = "🎯 Practice Time!\n" + parts[1].strip()
+        practice_problem = None
+        if "🎯 Practice Time!" in full_reply:
+            parts = full_reply.split("🎯 Practice Time!", 1)
+            if len(parts) > 1 and parts[1].strip():
+                practice_problem = "🎯 Practice Time!\n" + parts[1].strip()
 
-    return jsonify({
-        "reply": reply,
-        "session_id": session_id,
-        "practice_problem": practice_problem,
-    })
+        yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'practice_problem': practice_problem})}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        content_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.route("/upload", methods=["POST"])

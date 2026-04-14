@@ -1,9 +1,8 @@
 import os
 import uuid
-import json
 import sqlite3
 from datetime import datetime
-from flask import Flask, request, jsonify, g, Response, stream_with_context
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -230,38 +229,25 @@ def chat():
     history = build_history(session_id)
     messages_for_llm = [SystemMessage(content=system_content)] + history
 
-    def generate():
-        full_reply = ""
-        try:
-            for chunk in llm.stream(messages_for_llm):
-                token = chunk.content
-                if token:
-                    full_reply += token
-                    yield f"data: {json.dumps({'token': token})}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-            return
+    try:
+        response = llm.invoke(messages_for_llm)
+        reply = response.content
+    except Exception as e:
+        return jsonify({"error": f"AI error: {str(e)}"}), 500
 
-        save_message(session_id, "assistant", full_reply)
+    save_message(session_id, "assistant", reply)
 
-        practice_problem = None
-        if "🎯 Practice Time!" in full_reply:
-            parts = full_reply.split("🎯 Practice Time!", 1)
-            if len(parts) > 1 and parts[1].strip():
-                practice_problem = "🎯 Practice Time!\n" + parts[1].strip()
+    practice_problem = None
+    if "🎯 Practice Time!" in reply:
+        parts = reply.split("🎯 Practice Time!", 1)
+        if len(parts) > 1 and parts[1].strip():
+            practice_problem = "🎯 Practice Time!\n" + parts[1].strip()
 
-        yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'practice_problem': practice_problem})}\n\n"
-
-    return Response(
-        stream_with_context(generate()),
-        content_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type",
-        },
-    )
+    return jsonify({
+        "reply": reply,
+        "session_id": session_id,
+        "practice_problem": practice_problem,
+    })
 
 
 @app.route("/upload", methods=["POST"])

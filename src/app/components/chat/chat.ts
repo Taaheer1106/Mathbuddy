@@ -15,10 +15,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { environment } from '../../../environments/environment';
 import { ChatService } from '../../services/chat.service';
 import { ThemeService } from '../../services/theme.service';
 import { Message, HistorySession } from '../../models/chat.model';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-chat',
@@ -106,7 +106,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.shouldScroll = true;
   }
 
-  async send() {
+  send() {
     const text = this.inputText.trim();
     if (!text && !this.pendingImageBase64) return;
     if (this.isLoading()) return;
@@ -121,88 +121,61 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.inputText = '';
     this.shouldScroll = true;
 
-    // Add AI message bubble immediately — will be filled as tokens stream in
-    const aiMsgId = this.chatService.generateId();
-    this.chatService.addMessage({
-      id: aiMsgId,
+    const typingMsg: Message = {
+      id: 'typing',
       role: 'assistant',
       content: '',
       timestamp: new Date(),
       isTyping: true,
-    });
+    };
+    this.chatService.addMessage(typingMsg);
     this.chatService.isLoading.set(true);
 
-    const body = {
-      message: text,
-      session_id: this.chatService.currentSessionId() ?? undefined,
-      ...(this.pendingImageBase64 && { image_base64: this.pendingImageBase64 }),
-    };
-    this.pendingImageBase64 = null;
-    this.pendingImagePreview = null;
+    this.chatService.sendMessage(text, this.pendingImageBase64 ?? undefined).subscribe({
+      next: (res) => {
+        this.chatService.messages.update(msgs => msgs.filter(m => m.id !== 'typing'));
+        this.chatService.isLoading.set(false);
 
-    try {
-      const response = await fetch(`${environment.apiUrl}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-
-            if (data.token) {
-              fullContent += data.token;
-              this.chatService.messages.update(msgs =>
-                msgs.map(m => m.id === aiMsgId ? { ...m, content: fullContent, isTyping: false } : m)
-              );
-              this.shouldScroll = true;
-            }
-
-            if (data.done) {
-              this.chatService.isLoading.set(false);
-              if (data.session_id) this.chatService.setSession(data.session_id);
-              if (data.practice_problem) {
-                this.chatService.addMessage({
-                  id: this.chatService.generateId(),
-                  role: 'assistant',
-                  content: `🎯 **Practice Time!**\n\n${data.practice_problem}`,
-                  timestamp: new Date(),
-                });
-              }
-              this.loadHistory();
-            }
-
-            if (data.error) throw new Error(data.error);
-          } catch { /* ignore parse errors on partial lines */ }
+        if (res.session_id) {
+          this.chatService.setSession(res.session_id);
         }
-      }
-    } catch {
-      this.chatService.messages.update(msgs => msgs.filter(m => m.id !== aiMsgId));
-      this.chatService.isLoading.set(false);
-      this.chatService.addMessage({
-        id: this.chatService.generateId(),
-        role: 'assistant',
-        content: 'Oops! I had a little trouble connecting. Make sure the backend is running and try again!',
-        timestamp: new Date(),
-      });
-      this.shouldScroll = true;
-    }
+
+        const aiMsg: Message = {
+          id: this.chatService.generateId(),
+          role: 'assistant',
+          content: res.reply,
+          timestamp: new Date(),
+        };
+        this.chatService.addMessage(aiMsg);
+
+        if (res.practice_problem) {
+          const practiceMsg: Message = {
+            id: this.chatService.generateId(),
+            role: 'assistant',
+            content: `🎯 **Practice Time!**\n\n${res.practice_problem}`,
+            timestamp: new Date(),
+          };
+          this.chatService.addMessage(practiceMsg);
+        }
+
+        this.pendingImageBase64 = null;
+        this.pendingImagePreview = null;
+        this.shouldScroll = true;
+        this.loadHistory();
+      },
+      error: () => {
+        this.chatService.messages.update(msgs => msgs.filter(m => m.id !== 'typing'));
+        this.chatService.isLoading.set(false);
+        const errMsg: Message = {
+          id: this.chatService.generateId(),
+          role: 'assistant',
+          content: "Oops! I had a little trouble connecting. Make sure the backend is running and try again!",
+          timestamp: new Date(),
+        };
+        this.chatService.addMessage(errMsg);
+        this.shouldScroll = true;
+      },
+    });
   }
 
   onKeydown(event: KeyboardEvent) {

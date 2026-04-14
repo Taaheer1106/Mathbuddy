@@ -1,0 +1,97 @@
+<div class="home">
+
+  <!-- Floating theme toggle -->
+  <button class="theme-toggle" (click)="themeService.toggle()" [title]="themeService.isDark() ? 'Light mode' : 'Dark mode'">
+    {{ themeService.isDark() ? '☀️' : '🌙' }}
+  </button>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="mascot">🦉</div>
+      <h1 class="hero-title">Math<span class="buddy">Buddy</span></h1>
+      <p class="tagline">Your Child's AI Math Best Friend</p>
+      <p class="sub-tagline">Making math <strong>fun</strong>, <strong>simple</strong> and <strong>fearless</strong> for every child</p>
+      <button mat-raised-button class="start-btn" (click)="startLearning()">🚀 Start Learning Free!</button>
+      <p class="ages">Perfect for ages 6–11 · No account needed · 100% free</p>
+    </div>
+    <div class="hero-bubbles">
+      <div class="bubble b1">2 + 2 = ? 🤔</div>
+      <div class="bubble b2">Great job! ⭐</div>
+      <div class="bubble b3">Let's try one more! 🎉</div>
+      <div class="math-symbol m1">∑</div>
+      <div class="math-symbol m2">π</div>
+      <div class="math-symbol m3">√</div>
+      <div class="math-symbol m4">÷</div>
+      <div class="math-symbol m5">∞</div>
+    </div>
+  </section>
+
+  <section class="topics-banner">
+    <p class="topics-label">I can help with:</p>
+    <div class="topics-scroll">
+      @for (topic of topics; track topic.label) {
+        <span class="topic-chip" (click)="startTopic(topic.prompt)">{{ topic.emoji }} {{ topic.label }}</span>
+      }
+    </div>
+  </section>
+
+  <section class="how-it-works">
+    <h2>How MathBuddy Works ✨</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-icon">📝</div>
+        <h3>Tell MathBuddy Your Problem</h3>
+        <p>Type it or take a photo of your homework</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-icon">🗣️</div>
+        <h3>MathBuddy Asks What You Tried</h3>
+        <p>Never judges — always encourages</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-icon">🌟</div>
+        <h3>Explains With Fun Examples</h3>
+        <p>Pizza, animals, games — things you already love!</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-icon">🏆</div>
+        <h3>Practice & Celebrate!</h3>
+        <p>Get a practice problem and earn your star</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2>Everything Your Child Needs 💪</h2>
+    <div class="features-grid">
+      @for (f of features; track f.title) {
+        <div class="feature-card" [style.border-top-color]="f.color" (click)="handleFeature(f.action)">
+          <div class="feature-emoji">{{ f.emoji }}</div>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.desc }}</p>
+          <span class="card-cta">Try it →</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="cta-content">
+      <h2>Ready to make math your superpower? 🦸</h2>
+      <p>No downloads. No account. Just you and your new math best friend.</p>
+      <button mat-raised-button class="start-btn cta-btn" (click)="startLearning()">🎯 Let's Go! Start Now</button>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Made with ❤️ for every child who ever felt scared of math.</p>
+    <p class="footer-sub">MathBuddy — Because every child deserves a patient teacher.</p>
+  </footer>
+</div>

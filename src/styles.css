@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+/* ─── CSS Variables ─── */
+:root {
+  --bg-main:     #f3efff;
+  --bg-surface:  #ede8fc;
+  --bg-card:     #ffffff;
+  --bg-input:    #ede8fc;
+  --text-primary:   #1a1a2e;
+  --text-secondary: #6b6b8a;
+  --border: #e2daf7;
+  --accent:   #667eea;
+  --accent-2: #764ba2;
+  --shadow-sm: 0 2px 12px rgba(102,126,234,0.08);
+  --shadow-md: 0 6px 28px rgba(102,126,234,0.14);
+}
+
+body.dark-theme {
+  --bg-main:     #0e0e1a;
+  --bg-surface:  #16162a;
+  --bg-card:     #1c1c30;
+  --bg-input:    #22223a;
+  --text-primary:   #e8e0ff;
+  --text-secondary: #9890c8;
+  --border: #2a2a42;
+}
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  font-family: 'Nunito', 'Segoe UI', sans-serif;
+  font-size: 16px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  transition: background 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c8bef0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a090d8; }
+
+/* ─── Angular Material overrides ─── */
+.mat-mdc-raised-button {
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* ─── Utility ─── */
+strong { font-weight: 800; }

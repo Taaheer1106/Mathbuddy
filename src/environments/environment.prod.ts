@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://mathbuddy-backend.up.railway.app',
+  apiUrl: 'https://mathbuddy-tad3.onrender.com',
 };

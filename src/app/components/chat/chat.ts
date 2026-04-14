@@ -147,7 +147,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         body: JSON.stringify(body),
       });
 
-      const reader = response.body!.getReader();
+      if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
       let fullContent = '';

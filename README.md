@@ -7,7 +7,7 @@
 
 An AI-powered math tutoring platform for students. Uses a full RAG (Retrieval-Augmented Generation) pipeline — PDF content is chunked, embedded into a FAISS vector store, and semantically retrieved to inject relevant context into LLM prompts — delivering accurate, grounded answers instead of hallucinated ones.
 
-> Live demo: [mathbuddy.pages.dev](https://mathbuddy.pages.dev) · Frontend on Cloudflare Pages · Backend on Render
+
 
 ---
 
